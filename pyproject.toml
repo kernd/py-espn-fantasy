@@ -1,0 +1,46 @@
+[project]
+name = "espn-fantasy"
+version = "0.1.0"
+description = "ESPN Fantasy Football weekly pot calculator"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "espn-api>=0.35.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+list-scores = "espn_fantasy.cli:list_scores_main"
+list-high-scores = "espn_fantasy.cli:list_high_scores_main"
+list-payouts = "espn_fantasy.cli:list_payouts_main"
+
+[dependency-groups]
+dev = [
+    "mypy~=1.17.0",
+    "pre-commit~=4.1",
+    "pre-commit-hooks~=5.0",
+    "ruff~=0.12",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/espn_fantasy"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+

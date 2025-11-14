@@ -1,0 +1,28 @@
+# Weekly pot participants list
+config.yaml
+
+# Build artifacts
+*.csv
+
+# Python / uv
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
