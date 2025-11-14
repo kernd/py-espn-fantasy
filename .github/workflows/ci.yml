@@ -17,12 +17,9 @@ jobs:
         with:
           version: "latest"
 
-      - name: Install just
-        uses: extractions/setup-just@v1
-
       - name: Install dependencies
-        run: just install
+        run: uv sync
 
       - name: Run CI checks
-        run: just ci
+        run: uv run --dev just ci
 

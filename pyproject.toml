@@ -8,12 +8,13 @@ dependencies = [
     "espn-api>=0.35.0",
     "pyyaml>=6.0",
     "pydantic>=2.0",
+    "typer>=0.16.0",
 ]
 
 [project.scripts]
-list-scores = "espn_fantasy.cli:list_scores_main"
-list-high-scores = "espn_fantasy.cli:list_high_scores_main"
-list-payouts = "espn_fantasy.cli:list_payouts_main"
+list-scores = "espn_fantasy.cli:list_scores_cmd"
+list-high-scores = "espn_fantasy.cli:list_high_scores_cmd"
+list-payouts = "espn_fantasy.cli:list_payouts_cmd"
 
 [dependency-groups]
 dev = [
@@ -21,6 +22,8 @@ dev = [
     "pre-commit~=4.1",
     "pre-commit-hooks~=5.0",
     "ruff~=0.12",
+    "rust-just~=1.40",
+    "types-pyyaml~=6.0",
 ]
 
 [build-system]
@@ -43,4 +46,5 @@ python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
+ignore_missing_imports = true
 

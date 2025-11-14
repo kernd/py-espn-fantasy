@@ -20,7 +20,7 @@ This project is the Python approach to the former [espn-fantasy](https://github.
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install project dependencies
-just install
+uv sync
 ```
 
 ### Create Configuration File
@@ -77,9 +77,9 @@ export SWID='your_value_here'
 List all team scores for a range of weeks in a human-friendly format:
 
 ```sh
-just list-scores              # Weeks 1-18 (default)
-just list-scores 1 10         # Weeks 1-10
-just list-scores 1 18 csv     # Also write CSV file
+uv run list-scores                    # Weeks 1-18 (default)
+uv run list-scores --start-week=1 --end-week=10
+uv run list-scores --start-week=1 --end-week=18 --csv
 ```
 
 ### List Weekly High Scores
@@ -87,10 +87,10 @@ just list-scores 1 18 csv     # Also write CSV file
 List only the highest scoring team owner for each week:
 
 ```sh
-just list-high-scores              # Weeks 1-18 (default)
-just list-high-scores 1 10         # Weeks 1-10
-just list-high-scores 1 18 csv     # Also write CSV file
-just list-high-scores 1 18 csv include-all  # Include all league members
+uv run list-high-scores                    # Weeks 1-18 (default)
+uv run list-high-scores --start-week=1 --end-week=10
+uv run list-high-scores --start-week=1 --end-week=18 --csv
+uv run list-high-scores --start-week=1 --end-week=18 --csv --include-all
 ```
 
 ### List Payout Totals
@@ -98,10 +98,10 @@ just list-high-scores 1 18 csv include-all  # Include all league members
 Calculate and display total payouts for each person based on weekly wins:
 
 ```sh
-just list-payouts              # Weeks 1-18 (default)
-just list-payouts 1 10         # Weeks 1-10
-just list-payouts 1 18 csv     # Also write CSV file
-just list-payouts 1 18 csv include-all  # Include all league members
+uv run list-payouts                    # Weeks 1-18 (default)
+uv run list-payouts --start-week=1 --end-week=10
+uv run list-payouts --start-week=1 --end-week=18 --csv
+uv run list-payouts --start-week=1 --end-week=18 --csv --include-all
 ```
 
 ## Authentication (for private leagues)
@@ -147,15 +147,35 @@ According to the [espn-api wiki](https://github.com/cwendt94/espn-api/wiki), you
 Development commands for code quality:
 
 ```sh
-just fmt               # Format code
-just lint              # Lint code
-just typecheck         # Type check code
-just check             # Run all checks (fmt, lint, typecheck)
-just ci                # Run CI checks (same as check)
+uv run just fmt               # Format code
+uv run just lint              # Lint code
+uv run just typing            # Type check code
+uv run just check             # Run all checks (fmt, lint, typing)
+uv run just ci                # Run CI checks (same as check)
 ```
 
 This project uses:
 - **uv** for dependency management and virtual environments
-- **just** for running common tasks
+- **rust-just** (Python package) for running common tasks
 - **ruff** for linting and formatting
 - **mypy** for type checking
+
+## Automated Weekly Reports
+
+A GitHub Actions workflow runs every Tuesday to automatically generate weekly reports:
+- Lists all scores for weeks 1-18
+- Lists high scores for weeks 1-18
+- Calculates payouts for weeks 1-18
+- Uploads CSV files as artifacts
+
+To enable this:
+1. Add the following GitHub Secrets in your repository settings:
+   - `ESPN_S2`: Your ESPN S2 cookie value
+   - `SWID`: Your SWID cookie value
+   - `CONFIG_YAML`: The complete contents of your `config.yaml` file
+2. The workflow will run automatically every Tuesday at 9:00 AM UTC
+3. You can also trigger it manually via the "Actions" tab
+
+The workflow uses the `--safe` flag to only show the first letter of last names in output for privacy.
+
+CSV files are available as downloadable artifacts for 30 days.

@@ -1,0 +1,58 @@
+name: Weekly Report
+
+on:
+  schedule:
+    # Run every Tuesday at 9:00 AM UTC (adjust timezone as needed)
+    - cron: '0 9 * * 2'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Create config.yaml from secret
+        run: |
+          echo "${{ secrets.CONFIG_YAML }}" > config.yaml
+
+      - name: List all scores
+        env:
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+          SWID: ${{ secrets.SWID }}
+        run: |
+          uv run list-scores --start-week=1 --end-week=18 --csv --safe || echo "Failed to list scores"
+
+      - name: List high scores
+        env:
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+          SWID: ${{ secrets.SWID }}
+        run: |
+          uv run list-high-scores --start-week=1 --end-week=18 --csv --safe || echo "Failed to list high scores"
+
+      - name: List payouts
+        env:
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+          SWID: ${{ secrets.SWID }}
+        run: |
+          uv run list-payouts --start-week=1 --end-week=18 --csv --safe || echo "Failed to list payouts"
+
+      - name: Upload CSV artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-reports
+          path: |
+            scores_weeks_*.csv
+            high_scores_weeks_*.csv
+            payouts_weeks_*.csv
+          retention-days: 30
+
