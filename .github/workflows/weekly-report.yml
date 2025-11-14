@@ -29,21 +29,21 @@ jobs:
           ESPN_S2: ${{ secrets.ESPN_S2 }}
           SWID: ${{ secrets.SWID }}
         run: |
-          uv run list-scores --start-week=1 --end-week=18 --csv --safe || echo "Failed to list scores"
+          uv run list-scores --start-week=1 --end-week=18 --csv --safe
 
       - name: List high scores
         env:
           ESPN_S2: ${{ secrets.ESPN_S2 }}
           SWID: ${{ secrets.SWID }}
         run: |
-          uv run list-high-scores --start-week=1 --end-week=18 --csv --safe || echo "Failed to list high scores"
+          uv run list-high-scores --start-week=1 --end-week=18 --csv --safe
 
       - name: List payouts
         env:
           ESPN_S2: ${{ secrets.ESPN_S2 }}
           SWID: ${{ secrets.SWID }}
         run: |
-          uv run list-payouts --start-week=1 --end-week=18 --csv --safe || echo "Failed to list payouts"
+          uv run list-payouts --start-week=1 --end-week=18 --csv --safe
 
       - name: Upload CSV artifacts
         if: always()
