@@ -1,5 +1,7 @@
 """ESPN Fantasy Football score fetching functionality."""
 
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
@@ -9,13 +11,23 @@ from espn_api.football import League
 from pydantic import BaseModel, Field, ValidationError
 
 
+class ScoreResult(BaseModel):
+    """Structure for a single team score result."""
+
+    team: str = Field(..., description="Team name")
+    score: float = Field(..., description="Team score for the week")
+    week: int = Field(..., description="Week number")
+    owner: str = Field(..., description="Team owner display name")
+    owner_full: str = Field(..., description="Team owner full name (first + last)")
+
+
 class WeeklyPotConfig(BaseModel):
     """Configuration for weekly pot."""
 
     payout: float = Field(..., description="Weekly pot payout amount in dollars")
     participants: list[str] = Field(..., description="List of participant names (first and last)")
 
-    def model_post_init(self, __context):
+    def model_post_init(self, __context: object) -> None:
         """Normalize participant names to lowercase and strip whitespace."""
         self.participants = [name.strip().lower() for name in self.participants]
 
@@ -28,7 +40,7 @@ class Config(BaseModel):
     weekly_pot: WeeklyPotConfig = Field(..., description="Weekly pot configuration")
 
 
-def load_config():
+def load_config() -> Config | None:
     """Load and validate configuration from config.yaml file."""
     config_file = Path("config.yaml")
     if not config_file.exists():
@@ -47,7 +59,7 @@ def load_config():
         return None
 
 
-def load_credentials():
+def load_credentials() -> tuple[str | None, str | None]:
     """Load credentials from environment variables."""
     espn_s2 = os.getenv("ESPN_S2")
     swid = os.getenv("SWID")
@@ -59,7 +71,7 @@ def load_credentials():
     return espn_s2, swid
 
 
-def fetch_week_scores(league, week):
+def fetch_week_scores(league: League, week: int) -> list[ScoreResult] | None:
     """Fetch scores for a specific week using the ESPN API"""
     try:
         # Get matchups for the week
@@ -134,22 +146,22 @@ def fetch_week_scores(league, week):
             )
 
             results.append(
-                {
-                    "team": home_team.team_name,
-                    "score": home_score,
-                    "week": week,
-                    "owner": home_owner_display,
-                    "owner_full": home_owner_full,
-                }
+                ScoreResult(
+                    team=home_team.team_name,
+                    score=home_score,
+                    week=week,
+                    owner=home_owner_display,
+                    owner_full=home_owner_full,
+                )
             )
             results.append(
-                {
-                    "team": away_team.team_name,
-                    "score": away_score,
-                    "week": week,
-                    "owner": away_owner_display,
-                    "owner_full": away_owner_full,
-                }
+                ScoreResult(
+                    team=away_team.team_name,
+                    score=away_score,
+                    week=week,
+                    owner=away_owner_display,
+                    owner_full=away_owner_full,
+                )
             )
 
         return results
@@ -159,7 +171,9 @@ def fetch_week_scores(league, week):
         return None
 
 
-def get_league_owners(league_id, season_id, espn_s2=None, swid=None):
+def get_league_owners(
+    league_id: int, season_id: int, espn_s2: str | None = None, swid: str | None = None
+) -> set[str] | None:
     """Get all team owners from the league for validation."""
     try:
         # Initialize league
@@ -193,7 +207,13 @@ def get_league_owners(league_id, season_id, espn_s2=None, swid=None):
         return None
 
 
-def validate_participants(config, league_id, season_id, espn_s2=None, swid=None):
+def validate_participants(
+    config: Config,
+    league_id: int,
+    season_id: int,
+    espn_s2: str | None = None,
+    swid: str | None = None,
+) -> bool:
     """Validate that all participants in config exist as team owners in the league."""
     owners = get_league_owners(league_id, season_id, espn_s2, swid)
     if owners is None:
@@ -223,7 +243,14 @@ def validate_participants(config, league_id, season_id, espn_s2=None, swid=None)
     return True
 
 
-def fetch_all_weeks(league_id, season_id, start_week=1, end_week=18, espn_s2=None, swid=None):
+def fetch_all_weeks(
+    league_id: int,
+    season_id: int,
+    start_week: int = 1,
+    end_week: int = 18,
+    espn_s2: str | None = None,
+    swid: str | None = None,
+) -> list[ScoreResult] | None:
     """Fetch scores for multiple weeks"""
     try:
         # Initialize league
@@ -263,31 +290,31 @@ def fetch_all_weeks(league_id, season_id, start_week=1, end_week=18, espn_s2=Non
         return None
 
 
-def write_csv_to_file(results, filename, safe=False):
+def write_csv_to_file(results: list[ScoreResult], filename: str, safe: bool = False) -> None:
     """Write results as CSV to a file"""
     with open(filename, "w") as f:
         f.write("owner,score,week,index\n")
 
         # Group by week and add index
-        week_data = {}
+        week_data: dict[int, list[ScoreResult]] = {}
         for result in results:
-            week = result["week"]
+            week = result.week
             if week not in week_data:
                 week_data[week] = []
             week_data[week].append(result)
 
         # Sort by week, then by score (descending)
         for week in sorted(week_data.keys()):
-            week_results = sorted(week_data[week], key=lambda x: x["score"], reverse=True)
+            week_results = sorted(week_data[week], key=lambda x: x.score, reverse=True)
             for idx, result in enumerate(week_results, 1):
                 # Use full name (first + last) for CSV, fallback to display name, then team name
-                owner = result.get("owner_full", result.get("owner", result["team"]))
+                owner = result.owner_full or result.owner or result.team
                 owner = owner.lower()  # Normalize to lowercase
                 owner = mask_name(owner, safe=safe)
-                f.write(f"{owner},{result['score']},{week},{idx}\n")
+                f.write(f"{owner},{result.score},{week},{idx}\n")
 
 
-def mask_name(name, safe=False):
+def mask_name(name: str, safe: bool = False) -> str:
     """Mask last name to show only first letter if safe mode is enabled."""
     if not safe:
         return name
@@ -301,35 +328,35 @@ def mask_name(name, safe=False):
     return name
 
 
-def output_all_scores_human(results, safe=False):
+def output_all_scores_human(results: list[ScoreResult], safe: bool = False) -> None:
     """Output all scores in a human-friendly format"""
     # Group by week
-    week_data = {}
+    week_data: dict[int, list[ScoreResult]] = {}
     for result in results:
-        week = result["week"]
+        week = result.week
         if week not in week_data:
             week_data[week] = []
         week_data[week].append(result)
 
     # Sort by week, then by score (descending)
     for week in sorted(week_data.keys()):
-        week_results = sorted(week_data[week], key=lambda x: x["score"], reverse=True)
+        week_results = sorted(week_data[week], key=lambda x: x.score, reverse=True)
         print(f"\n=== Week {week} ===")
         for idx, result in enumerate(week_results, 1):
             # Use full name (first + last) for display, fallback to display name, then team name
-            owner = result.get("owner_full", result.get("owner", result["team"]))
+            owner = result.owner_full or result.owner or result.team
             owner = owner.lower()  # Normalize to lowercase
             owner = mask_name(owner, safe=safe)
-            score = result["score"]
+            score = result.score
             print(f"  {idx}. {owner}: {score:.1f} points")
 
 
-def output_high_scores_human(results, safe=False):
+def output_high_scores_human(results: list[ScoreResult], safe: bool = False) -> None:
     """Output summary of highest scoring team owner for each week in human-friendly format"""
     # Group by week
-    week_data = {}
+    week_data: dict[int, list[ScoreResult]] = {}
     for result in results:
-        week = result["week"]
+        week = result.week
         if week not in week_data:
             week_data[week] = []
         week_data[week].append(result)
@@ -338,15 +365,17 @@ def output_high_scores_human(results, safe=False):
     print("\n=== Weekly High Scores ===")
     for week in sorted(week_data.keys()):
         week_results = week_data[week]
-        highest = max(week_results, key=lambda x: x["score"])
+        highest = max(week_results, key=lambda x: x.score)
         # Use full name (first + last) for the summary, fallback to display name
-        owner = highest.get("owner_full", highest.get("owner", highest["team"]))
+        owner = highest.owner_full or highest.owner or highest.team
         owner = owner.lower()  # Normalize to lowercase
         owner = mask_name(owner, safe=safe)
-        print(f"Week {week}: {owner} - {highest['score']:.1f} points")
+        print(f"Week {week}: {owner} - {highest.score:.1f} points")
 
 
-def filter_participants(results, participant_names):
+def filter_participants(
+    results: list[ScoreResult], participant_names: list[str]
+) -> list[ScoreResult]:
     """Filter results to only include weekly pot participants."""
     # Participant names are already normalized to lowercase in the Pydantic model
     # Just strip whitespace for comparison
@@ -355,8 +384,8 @@ def filter_participants(results, participant_names):
     filtered = []
     for result in results:
         # Check both full name and display name
-        owner_full = result.get("owner_full", "").strip().lower()
-        owner_display = result.get("owner", "").strip().lower()
+        owner_full = (result.owner_full or "").strip().lower()
+        owner_display = (result.owner or "").strip().lower()
 
         # Match if either full name or display name exactly matches or contains a participant name
         # We check both directions: participant in owner name, and owner name in participant
@@ -378,12 +407,12 @@ def filter_participants(results, participant_names):
     return filtered
 
 
-def write_high_scores_csv(results, filename, safe=False):
+def write_high_scores_csv(results: list[ScoreResult], filename: str, safe: bool = False) -> None:
     """Write weekly high scores as CSV to a file"""
     # Group by week
-    week_data = {}
+    week_data: dict[int, list[ScoreResult]] = {}
     for result in results:
-        week = result["week"]
+        week = result.week
         if week not in week_data:
             week_data[week] = []
         week_data[week].append(result)
@@ -392,29 +421,31 @@ def write_high_scores_csv(results, filename, safe=False):
         f.write("week,owner,score\n")
         for week in sorted(week_data.keys()):
             week_results = week_data[week]
-            highest = max(week_results, key=lambda x: x["score"])
-            owner = highest.get("owner_full", highest.get("owner", highest["team"]))
+            highest = max(week_results, key=lambda x: x.score)
+            owner = highest.owner_full or highest.owner or highest.team
             owner = owner.lower()  # Normalize to lowercase
             owner = mask_name(owner, safe=safe)
-            f.write(f"{week},{owner},{highest['score']:.1f}\n")
+            f.write(f"{week},{owner},{highest.score:.1f}\n")
 
 
-def calculate_payouts(results, payout_amount):
+def calculate_payouts(
+    results: list[ScoreResult], payout_amount: float
+) -> dict[str, dict[str, int | float]]:
     """Calculate total payouts for each person based on weekly wins."""
     # Group by week
-    week_data = {}
+    week_data: dict[int, list[ScoreResult]] = {}
     for result in results:
-        week = result["week"]
+        week = result.week
         if week not in week_data:
             week_data[week] = []
         week_data[week].append(result)
 
     # Track wins per person
-    payouts = {}
+    payouts: dict[str, dict[str, int | float]] = {}
     for week in sorted(week_data.keys()):
         week_results = week_data[week]
-        highest = max(week_results, key=lambda x: x["score"])
-        owner = highest.get("owner_full", highest.get("owner", highest["team"]))
+        highest = max(week_results, key=lambda x: x.score)
+        owner = highest.owner_full or highest.owner or highest.team
         owner = owner.lower()  # Normalize to lowercase
 
         if owner not in payouts:
@@ -425,7 +456,9 @@ def calculate_payouts(results, payout_amount):
     return payouts
 
 
-def output_payouts_human(payouts, payout_amount, safe=False):
+def output_payouts_human(
+    payouts: dict[str, dict[str, int | float]], payout_amount: float, safe: bool = False
+) -> None:
     """Output payout summary in human-friendly format."""
     print(f"\n=== Payout Summary (${payout_amount:.2f} per win) ===")
 
@@ -447,7 +480,12 @@ def output_payouts_human(payouts, payout_amount, safe=False):
         print(f"{owner_display}: {wins} win{'s' if wins != 1 else ''} = ${total:.2f}")
 
 
-def write_payouts_csv(payouts, filename, payout_amount, safe=False):
+def write_payouts_csv(
+    payouts: dict[str, dict[str, int | float]],
+    filename: str,
+    payout_amount: float,
+    safe: bool = False,
+) -> None:
     """Write payout summary as CSV to a file"""
     with open(filename, "w") as f:
         f.write("owner,wins,total_payout\n")

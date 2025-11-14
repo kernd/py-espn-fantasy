@@ -1,8 +1,11 @@
 """Command-line interface for ESPN Fantasy Football weekly pot calculator."""
 
+from __future__ import annotations
+
 import typer
 
 from espn_fantasy.scores import (
+    Config,
     calculate_payouts,
     fetch_all_weeks,
     filter_participants,
@@ -20,7 +23,7 @@ from espn_fantasy.scores import (
 app = typer.Typer()
 
 
-def get_config():
+def get_config() -> Config:
     """Load and validate config."""
     config = load_config()
     if not config:
@@ -44,7 +47,7 @@ def list_scores(
     safe: bool = typer.Option(
         False, "--safe", help="Only show first letter of last name in output"
     ),
-):
+) -> None:
     """List all scores for teams in your league for a range of weeks."""
     config = get_config()
     espn_s2, swid = load_credentials()
@@ -82,7 +85,7 @@ def list_high_scores(
     safe: bool = typer.Option(
         False, "--safe", help="Only show first letter of last name in output"
     ),
-):
+) -> None:
     """List the highest scoring team owner for each week in a range."""
     config = get_config()
     espn_s2, swid = load_credentials()
@@ -128,7 +131,7 @@ def list_payouts(
     safe: bool = typer.Option(
         False, "--safe", help="Only show first letter of last name in output"
     ),
-):
+) -> None:
     """Calculate total payouts for each person based on weekly wins."""
     config = get_config()
     espn_s2, swid = load_credentials()
@@ -164,22 +167,22 @@ def list_payouts(
         typer.echo(f"\nCSV file written to: {filename}", err=True)
 
 
-def list_scores_cmd():
+def list_scores_cmd() -> None:
     """CLI entry point for list-scores command."""
     typer.run(list_scores)
 
 
-def list_high_scores_cmd():
+def list_high_scores_cmd() -> None:
     """CLI entry point for list-high-scores command."""
     typer.run(list_high_scores)
 
 
-def list_payouts_cmd():
+def list_payouts_cmd() -> None:
     """CLI entry point for list-payouts command."""
     typer.run(list_payouts)
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     app()
 
