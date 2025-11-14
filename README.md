@@ -172,7 +172,7 @@ To enable this:
 1. Add the following GitHub Secrets in your repository settings:
    - `ESPN_S2`: Your ESPN S2 cookie value
    - `SWID`: Your SWID cookie value
-   - `CONFIG_YAML`: The complete contents of your `config.yaml` file
+   - `CONFIG`: The complete contents of your `config.yaml` file
 2. The workflow will run automatically every Tuesday at 9:00 AM UTC
 3. You can also trigger it manually via the "Actions" tab
 

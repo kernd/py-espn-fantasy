@@ -22,7 +22,28 @@ jobs:
 
       - name: Create config.yaml from secret
         run: |
-          echo "${{ secrets.CONFIG_YAML }}" > config.yaml
+          if [ -z "${{ secrets.CONFIG }}" ]; then
+            echo "Error: CONFIG secret is not set or is empty"
+            exit 1
+          fi
+          echo "${{ secrets.CONFIG }}" > config.yaml
+          if [ ! -s config.yaml ]; then
+            echo "Error: config.yaml was created but is empty"
+            exit 1
+          fi
+          echo "✓ config.yaml created successfully"
+
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.ESPN_S2 }}" ]; then
+            echo "Error: ESPN_S2 secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SWID }}" ]; then
+            echo "Error: SWID secret is not set"
+            exit 1
+          fi
+          echo "✓ All required secrets are set"
 
       - name: List all scores
         env:
